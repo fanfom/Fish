@@ -498,7 +498,7 @@ for i in rodlist:
     rods.append(imagehash.phash(Image.open("rod/" + i)))
 #getloot(Arduino)
 time.sleep(0.1)
-mode="Gold"
+mode="Rod"
 # nextrod(Arduino)
 
 grab=mss.mss()
