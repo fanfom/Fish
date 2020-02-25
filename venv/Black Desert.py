@@ -22,33 +22,6 @@ def wait_arduino(arduino=serial.Serial):
     s=""
     while s!="END":
         s+=arduino.read().decode()
-def serial_ports():
-    """ Lists serial port names
-
-        :raises EnvironmentError:
-            On unsupported or unknown platforms
-        :returns:
-            A list of the serial ports available on the system
-    """
-    if sys.platform.startswith('win'):
-        ports = ['COM%s' % (i + 1) for i in range(256)]
-    elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
-        # this excludes your current terminal "/dev/tty"
-        ports = glob.glob('/dev/tty[A-Za-z]*')
-    elif sys.platform.startswith('darwin'):
-        ports = glob.glob('/dev/tty.*')
-    else:
-        raise EnvironmentError('Unsupported platform')
-
-    result = []
-    for port in ports:
-        try:
-            s = serial.Serial(port)
-            s.close()
-            result.append(port)
-        except (OSError, serial.SerialException):
-            pass
-    return result
 def get_active_window():
     """
     Get the currently active window.
@@ -110,10 +83,6 @@ def get_screen(x1, y1, x2, y2):
     screen = ImageGrab.grab(box)
     img = array(screen.getdata(), dtype=uint8).reshape((screen.size[1], screen.size[0], 3))
     return img
-def get_screen1(x1, y1, x2, y2):
-    box = (x1 + 8, y1 + 30, x2 - 8, y2)
-    screen = ImageGrab.grab(box)
-    return screen
 def phase2(Arduino=serial.Serial()):
     # Анализ букв
     out=""
@@ -310,7 +279,6 @@ def get_auk(Arduino=serial.Serial()):
         n+=1
     Arduino.write("Esc".encode())
     wait_arduino(Arduino)
-
 def nextrod (Arduino=serial.Serial()):
     #print("Beer{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}")
     #Arduino.write(("Beer{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}").encode())
@@ -323,7 +291,6 @@ def nextrod (Arduino=serial.Serial()):
     time.sleep(0.5)
     fullstorage_img = get_screen(1440, 790, 1520, 850)
     fullstorage_img = cv2.inRange(fullstorage_img,array([230,50,50],uint8),array([250,60,60],uint8))
-
     if (count_nonzero(fullstorage_img)>0):
         print("FULLSTORAGE")
         sys.exit()
@@ -377,7 +344,6 @@ def nextrod (Arduino=serial.Serial()):
     inv_t = cv2.inRange(inv, array([30,30,30],uint8),array([255,255,255],uint8))
     contours, hierarchy = cv2.findContours(inv_t, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     n=1
-
     rodchacnge = False
     chairchange = False
     if mode == "Rod":
@@ -415,7 +381,6 @@ def nextrod (Arduino=serial.Serial()):
                 rodsalive=True
                 continue
             if mode=="Gar"and imagehash.phash(Image.fromarray(roi))==chair_hash and chair_alive==False:
-
                 if (n%8)!=0:
                     s = "Loot{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + str(
                         int(1420 + (n % 8 * 57))) + "," + str(360 + int((n) / 8) * 50) + "]"
@@ -431,8 +396,48 @@ def nextrod (Arduino=serial.Serial()):
             if chairchange and rodchacnge:
                 Arduino.write("i".encode())
                 return
-
             n+=1
+    Arduino.write("i".encode())
+def delete_(Arduino=serial.Serial(),n=-1):
+    if n==-1:
+        return
+    if (n % 8) != 0:
+        s = "Drag{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + str(
+            int(1420 + (n % 8 * 57))) + "," + str(360 + int((n) / 8) * 50) + "]"+"<1860?850>"
+    else:
+        s = "Drag{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + str(
+            int(1420 + (n % 8 * 60))) + "," + str(360 + int((n) / 8) * 50) + "]"+"<1860?850>"
+    Arduino.write(s.encode())
+    wait_arduino(Arduino)
+    s = "LClick{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + "850,450]"
+    wait_arduino(Arduino)
+
+
+def delete_inv (Arduino=serial.Serial()):
+    Arduino.write("i".encode())
+    time.sleep(0.5)
+    s = "Loot{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + str(int(800)) + "," + str(100) + "]"
+    Arduino.write(s.encode())
+    wait_arduino(Arduino)
+    inv = get_screen(1450, 290, 1900, 760)
+    inv_t = cv2.inRange(inv, array([30, 30, 30], uint8), array([255, 255, 255], uint8))
+    contours, hierarchy = cv2.findContours(inv_t, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    n = 1
+    for i in range(len(contours) - 1, 0, -1):
+        if len(contours[i]) == 4:
+            x, y, width, height = cv2.boundingRect(contours[i])
+            if (width < 40) or (height < 40):
+                continue
+            roi = inv[y:y + height, x:x + width]
+            for x in range(len (roi)):
+                for y in range(len(roi[x])):
+                    if roi[x][y][0]<90:
+                        roi[x][y]=0
+                    else:
+                        roi[x][y]=255
+            if count_nonzero(roi)>2000:
+                delete_(Arduino,n)
+            n += 1
     Arduino.write("i".encode())
 def hooking(Arduino=serial.Serial()):
     # Подсечка
@@ -450,7 +455,6 @@ def hooking(Arduino=serial.Serial()):
         if x==20:
             return
 def findobject(target):
-
     if count_nonzero(target)<50:
         return (0,0)
     for x in range(0,len(target),4):
@@ -479,7 +483,7 @@ phase2_color_max = array([54,54,59],uint8)
 
 print("start")
 
-Arduino=serial.Serial('COM3',9400)
+Arduino=""
 time.sleep(2)
 goodfishlist=os.listdir("loot/good/")
 goodfish=[]
@@ -500,6 +504,7 @@ for i in rodlist:
 #getloot(Arduino)
 time.sleep(0.1)
 mode="Rod"
+delete_inv(Arduino)
 # nextrod(Arduino)
 # get_auk(Arduino)
 grab=mss.mss()
@@ -567,7 +572,6 @@ while True:
         print("loot")
         getloot(Arduino)
         time.sleep(1)
-
     if(get_active_window()[:12]=="Black Desert")and((mode=="Rod")or(mode=="Gold")or(mode=="Start")):
         #Ожидание рыбы
         inwater=False
