@@ -1,0 +1,1 @@
+@"C:\Users\fanfo\PycharmProjects\PoE FLASK\venv\Scripts\python.exe" "C:\Users\fanfo\PycharmProjects\PoE FLASK\venv\Scripts\markdown_py" %*
