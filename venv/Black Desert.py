@@ -278,6 +278,7 @@ def get_auk(Arduino=serial.Serial()):
     wait_arduino(Arduino)
     Arduino.write(("LClick{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + "850" + ",750]").encode())
     wait_arduino(Arduino)
+    time.sleep(1)
     inv=get_screen(960,280,1450,770)
     inv_t = cv2.inRange(inv, array([50,50,50],uint8),array([255,255,255],uint8))
     inv_t = inv_t+cv2.inRange(inv, array([30,35,40],uint8),array([40,45,50],uint8))
@@ -500,7 +501,7 @@ for i in rodlist:
 time.sleep(0.1)
 mode="Rod"
 # nextrod(Arduino)
-
+# get_auk(Arduino)
 grab=mss.mss()
 while True:
     if (get_active_window()[:12]=="Black Desert")and(mode=="Gar"):

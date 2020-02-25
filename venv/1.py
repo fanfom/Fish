@@ -18,7 +18,11 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
                     level=logging.DEBUG,
                     stream=sys.stdout)
 
-
+def wait_arduino(arduino=serial.Serial):
+    s=""
+    while s!="END":
+        s+=arduino.read().decode()
+        print(s)
 def get_active_window():
     """
     Get the currently active window.
@@ -82,19 +86,12 @@ def get_screen(x1, y1, x2, y2):
     return img
 
 Mouse=mouse.Controller()
-
-
-goodfishlist=os.listdir("loot/trash/")
-goodfish=[]
-for i in range(len(goodfishlist)):
-    goodfish.append(str(imagehash.phash(Image.open("loot/trash/"+goodfishlist[i]))))
-
-for i in range(len(goodfishlist)):
-    for j in range(len(goodfish)):
-        if goodfishlist[i]!= goodfishlist[j] and goodfish[i]==goodfish[j]:
-            os.remove("loot/trash/"+goodfishlist[j])
-
-
+Arduino=serial.Serial('COM3',9400)
+Arduino.write(("Drag{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + "1485" + ",400]"+"<1860?850>").encode())
+wait_arduino(Arduino)
+# 1485 400
+# 1860 850
+# 850 480
 
 while True:
     time.sleep(0.5)
