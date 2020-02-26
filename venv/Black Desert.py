@@ -22,6 +22,7 @@ def wait_arduino(arduino=serial.Serial):
     s=""
     while s!="END":
         s+=arduino.read().decode()
+    time.sleep(2)
 def get_active_window():
     """
     Get the currently active window.
@@ -268,14 +269,14 @@ def get_auk(Arduino=serial.Serial()):
                 Arduino.write(s.encode())
                 wait_arduino(Arduino)
                 print(s,n)
-                return
+
             else:
                 s = "Loot{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + str(
                     int(1005 + (n % 8 * 60))) + "," + str(350 + int((n) / 8) * 50) + "]"
                 Arduino.write(s.encode())
                 wait_arduino(Arduino)
                 print(s,n)
-                return
+
         n+=1
     Arduino.write("Esc".encode())
     wait_arduino(Arduino)
@@ -401,6 +402,7 @@ def nextrod (Arduino=serial.Serial()):
 def delete_(Arduino=serial.Serial(),n=-1):
     if n==-1:
         return
+    time.sleep(1)
     if (n % 8) != 0:
         s = "Drag{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + str(
             int(1420 + (n % 8 * 57))) + "," + str(360 + int((n) / 8) * 50) + "]"+"<1860?850>"
@@ -408,11 +410,11 @@ def delete_(Arduino=serial.Serial(),n=-1):
         s = "Drag{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + str(
             int(1420 + (n % 8 * 60))) + "," + str(360 + int((n) / 8) * 50) + "]"+"<1860?850>"
     Arduino.write(s.encode())
-    wait_arduino(Arduino)
+    time.sleep(2)
     s = "LClick{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + "850,450]"
+    print(s)
+    Arduino.write(s.encode())
     wait_arduino(Arduino)
-
-
 def delete_inv (Arduino=serial.Serial()):
     Arduino.write("i".encode())
     time.sleep(0.5)
@@ -428,15 +430,16 @@ def delete_inv (Arduino=serial.Serial()):
             x, y, width, height = cv2.boundingRect(contours[i])
             if (width < 40) or (height < 40):
                 continue
-            roi = inv[y:y + height, x:x + width]
+            roi = copy(inv)[y:y + height, x:x + width]
             for x in range(len (roi)):
                 for y in range(len(roi[x])):
-                    if roi[x][y][0]<90:
+                    if roi[x][y][0]<20:
                         roi[x][y]=0
                     else:
                         roi[x][y]=255
-            if count_nonzero(roi)>2000:
+            if count_nonzero(roi)>5000:
                 delete_(Arduino,n)
+                n-=1
             n += 1
     Arduino.write("i".encode())
 def hooking(Arduino=serial.Serial()):
@@ -483,8 +486,9 @@ phase2_color_max = array([54,54,59],uint8)
 
 print("start")
 
-Arduino=""
+Arduino=serial.Serial('COM3',9400)
 time.sleep(2)
+
 goodfishlist=os.listdir("loot/good/")
 goodfish=[]
 for i in range(len(goodfishlist)):
@@ -504,9 +508,8 @@ for i in rodlist:
 #getloot(Arduino)
 time.sleep(0.1)
 mode="Rod"
-delete_inv(Arduino)
-# nextrod(Arduino)
 # get_auk(Arduino)
+# nextrod(Arduino)
 grab=mss.mss()
 while True:
     if (get_active_window()[:12]=="Black Desert")and(mode=="Gar"):
@@ -599,7 +602,9 @@ while True:
             Arduino.write("space".encode())
             time.sleep(4)
             if count_nonzero(broke_rod)>50:
+                get_auk(Arduino)
                 nextrod(Arduino)
+                delete_inv(Arduino)
             continue
 
 

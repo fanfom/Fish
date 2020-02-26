@@ -87,8 +87,8 @@ def get_screen(x1, y1, x2, y2):
 
 Mouse=mouse.Controller()
 Arduino=serial.Serial('COM3',9400)
-Arduino.write(("Drag{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + "1485" + ",400]"+"<1860?850>").encode())
-wait_arduino(Arduino)
+# Arduino.write(("Drag{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + "1485" + ",400]"+"<1860?850>").encode())
+# wait_arduino(Arduino)
 # 1485 400
 # 1860 850
 # 850 480
