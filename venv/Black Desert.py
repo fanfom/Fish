@@ -22,7 +22,7 @@ def wait_arduino(arduino=serial.Serial):
     s=""
     while s!="END":
         s+=arduino.read().decode()
-    time.sleep(2)
+    time.sleep(0.1)
 def get_active_window():
     """
     Get the currently active window.
@@ -194,7 +194,7 @@ def getloot (Arduino=serial.Serial()):
             gold= cv2.inRange   (roiloot, array([230,170,50],uint8), array([255,200,100],uint8))
             if count_nonzero(gold)>100:
                 print("GOLD")
-                if mode=="Gold":
+                if mode=="Gold" or mode =="Gar":
                     s = "Loot{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + str(
                     int(1380 + f * 50)) + ",530]"
                     Arduino.write(s.encode())
@@ -244,7 +244,7 @@ def getloot (Arduino=serial.Serial()):
 def get_auk(Arduino=serial.Serial()):
     Arduino.write("Ctrl".encode())
     wait_arduino(Arduino)
-    Arduino.write(("LClick{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + "275" + ",170]").encode())
+    Arduino.write(("LClick{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + "330" + ",170]").encode())
     wait_arduino(Arduino)
     Arduino.write(("LClick{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + "850" + ",750]").encode())
     wait_arduino(Arduino)
@@ -265,14 +265,14 @@ def get_auk(Arduino=serial.Serial()):
         if str(imagehash.phash(Image.fromarray(roi)))=="bf4c92acda94a992":
             if (n % 8) != 0:
                 s = "Loot{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + str(
-                    int(1005 + (n % 8 * 57))) + "," + str(350 + int((n) / 8) * 50) + "]"
+                    int(985 + (n % 8 * 57))) + "," + str(350 + int((n) / 8) * 50) + "]"
                 Arduino.write(s.encode())
                 wait_arduino(Arduino)
                 print(s,n)
 
             else:
                 s = "Loot{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + str(
-                    int(1005 + (n % 8 * 60))) + "," + str(350 + int((n) / 8) * 50) + "]"
+                    int(985 + (n % 8 * 60))) + "," + str(350 + int((n) / 8) * 50) + "]"
                 Arduino.write(s.encode())
                 wait_arduino(Arduino)
                 print(s,n)
@@ -285,6 +285,10 @@ def nextrod (Arduino=serial.Serial()):
     #Arduino.write(("Beer{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}").encode())
     #
     # time.sleep(4.2)
+    if altmode=="Char":
+        Arduino.write("w".encode())
+        wait_arduino(Arduino)
+
     Arduino.write("i".encode())
     time.sleep(0.5)
     s = "Loot{" + str(Mouse.position[0]) + "|" + str(Mouse.position[1]) + "}[" + str(int(800)) + "," + str(100) + "]"
@@ -335,6 +339,7 @@ def nextrod (Arduino=serial.Serial()):
         print(count_nonzero(roi))
         if count_nonzero(roi) < 2000:
             chair_alive = True
+    print(chair_alive)
     if rodsalive and chair_alive:
         print("ok")
         time.sleep(0.1)
@@ -398,6 +403,7 @@ def nextrod (Arduino=serial.Serial()):
                 Arduino.write("i".encode())
                 return
             n+=1
+    wait_arduino(Arduino)
     Arduino.write("i".encode())
 def delete_(Arduino=serial.Serial(),n=-1):
     if n==-1:
@@ -439,6 +445,7 @@ def delete_inv (Arduino=serial.Serial()):
                         roi[x][y]=255
             if count_nonzero(roi)>5000:
                 delete_(Arduino,n)
+                return
                 n-=1
             n += 1
     Arduino.write("i".encode())
@@ -465,8 +472,8 @@ def findobject(target):
             if target[x,y] == 255:
                 start = (x, y)
                 while (target[x, y] != 0) and x!=len(target-1) and y!=len(target[x]-1):
-                    x += 4
-                    y += 4
+                    x += 5
+                    y += 5
                 end = (x, y)
                 return (int((start[0]+end[0])/2),int((start[1]+end[1])/2))
 
@@ -507,10 +514,12 @@ for i in rodlist:
     rods.append(imagehash.phash(Image.open("rod/" + i)))
 #getloot(Arduino)
 time.sleep(0.1)
-mode="Rod"
+mode="Gar"
+altmode=""
 # get_auk(Arduino)
-# nextrod(Arduino)
+nextrod(Arduino)
 grab=mss.mss()
+n=0
 while True:
     if (get_active_window()[:12]=="Black Desert")and(mode=="Gar"):
         # start_time = timer()
@@ -525,6 +534,8 @@ while True:
         fish=count_nonzero(fishing_img)
         # print("nonzero", timer() - start_time)
 
+        broke_rod = get_screen(1500, 100, 1550, 170)
+        broke_rod = cv2.inRange(broke_rod, array([140, 0, 0], uint8), array([160, 20, 20], uint8))
         if (fish>3000):
             screen_fishing = cv2.cvtColor(array(grab.grab({"top":330,"left":610, "width":690, "height":420}),uint8),cv2.COLOR_RGB2BGR)
             # print("screen2", timer() - start_time)
@@ -561,14 +572,15 @@ while True:
             time.sleep(2)
             continue
         if (fish > 1800):
-            rod+=1
-            if rod>10:
-                print("next rod", rod)
+
+            if count_nonzero(broke_rod)>50 or n>101:
                 nextrod(Arduino)
-                rod = 0
+                if n>101:
+                    n=0
             time.sleep(1)
 
             Arduino.write("space".encode())
+            n+=1
             time.sleep(2)
             continue
         time.sleep(6)
@@ -604,6 +616,7 @@ while True:
             if count_nonzero(broke_rod)>50:
                 get_auk(Arduino)
                 nextrod(Arduino)
+                time.sleep(2)
                 delete_inv(Arduino)
             continue
 
